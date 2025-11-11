@@ -46,5 +46,5 @@ app.use((err, req, res, next) => {
 
 //Jalankan server//
 const PORT = process.env.PORT || 5000;
-console.log("JWT_SECRET =", process.env.JWT_SECET);
+console.log("DEBUG JWT_SECRET =", process.env.JWT_SECET);
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -2,7 +2,6 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-const generateToken = require("../utils/generateToken");
 const protect = require("../middleware/authMiddleware");
 const {
   generateAccessToken,
@@ -14,6 +13,9 @@ const users = [];
 
 //Untuk simpan refresh token sementara (simulasi database)
 let refreshTokens = [];
+
+//Simulasi database untuk blacklist token (logout)//
+let tokenBlackList = [];
 
 //Register user baru
 router.post("/register", async (req, res) => {
@@ -93,20 +95,27 @@ router.post("/login", async (req, res) => {
 //Refresh Token//
 //Add setelah end point login//
 router.post("/refresh", (req, res) => {
-  const { token } = req.body;
-  if (!token) return res.status(401).json({ message: "Token tidak ditemukan" });
+  const { refreshToken } = req.body;
+  if (!refreshToken)
+    return res.status(401).json({ message: "Refresh token tidak ditemukan" });
 
-  //periksa apakah refreshToken valid//
-  if (!refreshTokens.includes(token))
+  // periksa apakah refreshToken valid dan belum di-blacklist
+  if (!refreshTokens.includes(refreshToken))
     return res.status(403).json({ message: "Refresh token tidak valid" });
 
-  jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
+  if (tokenBlackList.includes(refreshToken))
+    return res.status(403).json({ message: "Refresh token sudah diblacklist" });
+
+  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, (err, decoded) => {
     if (err)
       return res.status(403).json({ message: "Refresh token kedaluwarsa" });
 
+    // decoded hanya berisi id (sesuai payload saat membuat refresh token)
+    const foundUser = users.find((u) => u.id === decoded.id);
+
     const newAccessToken = generateAccessToken({
-      id: user.id,
-      email: user.email,
+      id: decoded.id,
+      email: foundUser ? foundUser.email : undefined,
     });
 
     res.json({
@@ -127,7 +136,18 @@ router.post("/logout", (req, res) => {
       .json({ success: false, message: "Refresh token tidak ditemukan" });
   }
 
+  // jika sudah di-blacklist, tolak
+  if (tokenBlackList.includes(refreshToken)) {
+    return res
+      .status(403)
+      .json({ message: "Token sudah logout (diblacklist)" });
+  }
+
+  // hapus dari array refresh tokens aktif
   refreshTokens = refreshTokens.filter((token) => token !== refreshToken);
+
+  // tambahkan ke blacklist supaya tidak bisa dipakai lagi
+  tokenBlackList.push(refreshToken);
 
   return res.json({
     success: true,

@@ -1,15 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
+const protect = require("../middleware/authMiddleware");
 
-const authorizesRoles = require("../middleware/roleMiddleware");
-
-//contoh protected route//
-router.get("/admin", authMiddleware, authorizesRoles("admin"), (req, res) => {
-  console.log("DEBUG ROUTE PROFILE TERPANGGIL, USER", req.user);
+router.get("/profile", protect, (req, res) => {
   res.json({
-    message: "Selamat datang di halaman admin!",
-    user: req.user, //this is the result of decode JWT
+    success: true,
+    message: "Data user berhasil diambil",
+    user: req.user,
   });
 });
 

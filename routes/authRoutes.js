@@ -8,11 +8,25 @@ const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../utils/generateToken");
+const authorizesRoles = require("../middleware/roleMiddleware");
 
 //"Database" Sementara//
 const users = [];
 let tokenBlackList = [];
 let validRefreshTokens = [];
+
+//Route Admin//
+router.get(
+  "/admin/dashboard",
+  protect,
+  authorizesRoles("admin", "super-admin"),
+  (req, res) => {
+    res.json({
+      message: "Selamat datang di dashboard admin",
+      user: req.user,
+    });
+  }
+);
 
 //Endpoint Register//
 router.post("/register", async (req, res) => {
@@ -39,7 +53,7 @@ router.post("/register", async (req, res) => {
       username,
       email,
       password: hashedPassword,
-      role: "user",
+      role: "admin",
     };
     users.push(newUser);
 
@@ -134,7 +148,6 @@ router.post("/refresh", (req, res) => {
 });
 
 //Endpoint Logout//
-//Add after refresh section//
 router.post("/logout", (req, res) => {
   const { refreshToken } = req.body;
 
@@ -144,14 +157,14 @@ router.post("/logout", (req, res) => {
       .json({ success: false, message: "Refresh token tidak ditemukan" });
   }
 
-  // jika sudah di-blacklist, tolak
+  //Cek Apakah Token Sudah Di Blacklist//
   if (tokenBlackList.includes(refreshToken)) {
     return res
       .status(403)
       .json({ message: "Token sudah logout (diblacklist)" });
   }
 
-  // hapus dari array refresh tokens aktif
+  //Cek Apakah Token Ada Di Daftar Valid Refresh Tokens//
   if (!validRefreshTokens.includes(refreshToken)) {
     return res.status(403).json({
       success: false,
@@ -159,16 +172,17 @@ router.post("/logout", (req, res) => {
     });
   }
 
-  // tambahkan ke blacklist supaya tidak bisa dipakai lagi
+  //Tambahkan Token Ke Daftar Blacklist Supaya Tidak Bisa Dipakai Lagi//
   tokenBlackList.push(refreshToken);
 
+  //Response Berhasil Logout//
   return res.json({
     success: true,
     message: "Logout berhasil, token dihapus dari daftar aktif",
   });
 });
 
-//Test protected route//
+//Test Protected Route//
 router.get("/profile", protect, (req, res) => {
   res.json({
     message: "Berhasil mengakses route yang dilindungi",
@@ -176,4 +190,5 @@ router.get("/profile", protect, (req, res) => {
   });
 });
 
+//Export Router//
 module.exports = router;

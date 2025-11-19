@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 console.log("DEBUG JWT_SECRET =", process.env.JWT_SECRET);
 console.log("DEBUG JWT_REFRESH_SECRET =", process.env.JWT_REFRESH_SECRET);
 
@@ -7,10 +8,15 @@ const app = express();
 
 app.use(express.json());
 
+const adminRoutes = require("./routes/adminRoutes");
+app.use("/admin", adminRoutes);
+
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+
+console.log("DEBUG Load userRoutes =", userRoutes);
 
 app.use((err, req, res, next) => {
   console.error("Error caught by handler:", err);

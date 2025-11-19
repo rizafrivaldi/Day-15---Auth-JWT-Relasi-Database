@@ -1,9 +1,9 @@
 function authorizesRoles(...allowedRoles) {
   return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.role)) {
       return res
         .status(403)
-        .json({ message: "Akses ditolak, peran tidak sesuai" });
+        .json({ message: "Akses ditolak, role tidak memiliki izin" });
     }
     next();
   };

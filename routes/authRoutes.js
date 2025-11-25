@@ -3,21 +3,14 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const router = express.Router();
-
 const prisma = require("../prisma/prisma");
+
 const protect = require("../middleware/authMiddleware");
 const authorizesRoles = require("../middleware/roleMiddleware");
 const {
   generateAccessToken,
   generateRefreshToken,
 } = require("../utils/generateToken");
-
-{/*
-//"Database" Sementara//
-const users = [];
-let tokenBlackList = [];
-let validRefreshTokens = [];
-*/}
 
 //Endpoint Register//
 router.post("/register", async (req, res) => {
@@ -62,24 +55,25 @@ router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    if (!email || !password) {
+    if (!email || !password) 
       return res
         .status(400)
-        .json({ message: "Email dan password wajib diisi!" });
+        .json({ message: "Email dan password wajib diisi!", });
     
 
     //Cek Email User Ada Di "Database" Sementara//
     const user = await prisma.user.findUnique({
       where: { email: email },
     });
-    if (!user) {
+
+    if (!user) 
       return res.status(404).json({ message: "User tidak ditemukan!" });
 
     //Cocokan Password Hashed VS Password Input//
     const match = await bcrypt.compare(password, user.password);
-    if (!match) {
+    if (!match) 
       return res.status(400).json({ message: "Password salah!" });
-    }
+    
 
     //Buat Access Token & Refresh Token//
     const accessToken = generateAccessToken(user);
@@ -93,11 +87,6 @@ router.post("/login", async (req, res) => {
       },
     });
 
-    {/*
-    //Simpan Refresh Token Di "Database" Sementara//
-    validRefreshTokens.push(refreshToken);
-    */}
-
     //Response Berhasil Login//
     return res.status(200).json({
       message: "Login berhasil",
@@ -105,6 +94,7 @@ router.post("/login", async (req, res) => {
       refreshToken,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });
@@ -124,19 +114,8 @@ router.post("/refresh", async (req, res) => {
   if (!tokenRow || tokenRow.revoked) 
     return res.status(403).json({ message: "Refresh token tidak valid" });
 
-
-  {/*
-  //Cek Apakah Refresh Token Ada Di Daftar Token Valid (Whitelist)//
-  if (!validRefreshTokens.includes(refreshToken))
-    return res.status(403).json({ message: "Refresh token tidak valid" });
-
-  //Cek Apakah Refresh Token Sudah Di-Blacklist//
-  if (tokenBlackList.includes(refreshToken))
-    return res.status(403).json({ message: "Refresh token sudah diblacklist" });
-  */}
-
   //Verifikasi Refresh Token Dengan JWT//
-  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async(err, decoded) => {
+  jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (err, decoded) => {
     if (err)
       return res.status(403).json({ message: "Refresh token kedaluwarsa" });
 
@@ -166,37 +145,16 @@ router.post("/refresh", async (req, res) => {
 router.post("/logout", async (req, res) => {
   const { refreshToken } = req.body;
 
-  if (!refreshToken) {
+  if (!refreshToken) 
     return res
       .status(400)
       .json({ success: false, message: "Refresh token tidak ditemukan" });
-
-  {/*
-  //Cek Apakah Token Ada Di Daftar Valid Refresh Tokens//
-  if (!validRefreshTokens.includes(refreshToken)) {
-    return res.status(403).json({
-      success: false,
-      message: "Refresh token tidak valid",
-    });
-  }
-  
-  //Cek Apakah Token Sudah Di Blacklist//
-  if (tokenBlackList.includes(refreshToken)) {
-    return res
-      .status(403)
-      .json({ message: "Token sudah logout (diblacklist)" });
-  }
-
-  //Tambahkan Token Ke Daftar Blacklist Supaya Tidak Bisa Dipakai Lagi//
-  tokenBlackList.push(refreshToken);
-
-  */}
 
   const tokenRow = await prisma.refreshToken.findUnique({
     where: { token: refreshToken},
   });
 
-  if (!tokenRow) {
+  if (!tokenRow) 
     return res.status(403).json({
       message: "Refresh token tidak valid",
     });
@@ -205,8 +163,7 @@ router.post("/logout", async (req, res) => {
       where: { token: refreshToken },
       data: { revoked: true },
     });
-  }
-
+    
   //Response Berhasil Logout//
   return res.json({
     success: true,

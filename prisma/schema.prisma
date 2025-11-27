@@ -1,12 +1,17 @@
+// ========== Generator ========== //
 generator client {
   provider = "prisma-client-js"
 }
 
+// ========== Datasource ========== //
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
+// ========== Models ========== //
+
+// ---- USER MODEL ---- //
 model User {
   id        Int      @id @default(autoincrement())
   username  String
@@ -16,14 +21,31 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  posts         Post[]
   refreshTokens RefreshToken[]
 }
 
+// ---- POST MODEL ---- //
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  userId    Int
+  createdAt DateTime @default(now())
+
+  // Relation
+  user User @relation(fields: [userId], references: [id])
+}
+
+// ---- REFRESH TOKEN MODEL ---- //
 model RefreshToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
   revoked   Boolean  @default(false)
+  userId    Int
   createdAt DateTime @default(now())
+
+  // Relation
+  user User @relation(fields: [userId], references: [id])
 }

@@ -3,7 +3,6 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma/prisma");
 const protect = require("../middleware/authMiddleware");
-const e = require("express");
 
 //CREATE POST//
 router.post("/", protect, async (req, res) => {

@@ -7,6 +7,8 @@ const app = express();
 app.use(express.json());
 
 //Routes//
+const postRoutes = require("./routes/postRoutes");
+app.use("/api/posts", postRoutes);
 const adminRoutes = require("./routes/adminRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");

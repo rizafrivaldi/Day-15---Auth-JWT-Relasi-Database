@@ -7,15 +7,15 @@ const app = express();
 app.use(express.json());
 
 //Routes//
-const postRoutes = require("./routes/postRoutes");
-app.use("/api/posts", postRoutes);
 const adminRoutes = require("./routes/adminRoutes");
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const postRoutes = require("./routes/postRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/posts", postRoutes);
 
 //Error Handling Middleware//
 app.use((err, req, res, next) => {

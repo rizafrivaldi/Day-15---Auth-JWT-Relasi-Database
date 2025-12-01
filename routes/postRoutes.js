@@ -8,9 +8,9 @@ const protect = require("../middleware/authMiddleware");
 router.post("/", protect, async (req, res) => {
   try {
     const { title, content } = req.body;
-    if (!title || !content) {
+
+    if (!title || !content)
       return res.status(400).json({ message: "Title dan content harus diisi" });
-    }
 
     const post = await prisma.post.create({
       data: {
@@ -44,6 +44,7 @@ router.get("/", async (req, res) => {
 
     return res.json(posts);
   } catch (error) {
+    console.error("GET POSTS ERROR:", error);
     return res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });
@@ -51,8 +52,10 @@ router.get("/", async (req, res) => {
 //GET POST BY ID//
 router.get("/:id", async (req, res) => {
   try {
+    const postId = Number(req.params.id);
+
     const post = await prisma.post.findUnique({
-      where: { id: Number(req.params.id) },
+      where: { id: postId },
       include: {
         user: {
           select: { id: true, username: true, email: true },
@@ -66,6 +69,7 @@ router.get("/:id", async (req, res) => {
 
     return res.json(post);
   } catch (error) {
+    console.error("GET POST ERROR:", error);
     return res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });

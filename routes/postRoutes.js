@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma/prisma");
 const protect = require("../middleware/authMiddleware");
+const authorizesRoles = require("../middleware/roleMiddleware");
 
 //CREATE POST//
 router.post("/", protect, async (req, res) => {
@@ -28,7 +29,7 @@ router.post("/", protect, async (req, res) => {
 });
 
 //GET ALL POSTS//
-router.get("/", async (req, res) => {
+router.get("/all", protect, authorizesRoles("admin"), async (req, res) => {
   try {
     const posts = await prisma.post.findMany({
       include: {
@@ -40,9 +41,14 @@ router.get("/", async (req, res) => {
           },
         },
       },
+      orderBy: { createdAt: "desc" },
     });
 
-    return res.json(posts);
+    return res.json({
+      success: true,
+      count: posts.length,
+      posts,
+    });
   } catch (error) {
     console.error("GET POSTS ERROR:", error);
     return res.status(500).json({ message: "Terjadi kesalahan server" });

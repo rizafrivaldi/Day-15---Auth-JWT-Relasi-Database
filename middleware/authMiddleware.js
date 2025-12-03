@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const prisma = require("../prisma/prisma");
 
-function authMiddleware(req, res, next) {
+async function authMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
   //Pastikan header Authorization ada dan formatnya benar//
@@ -12,8 +13,16 @@ function authMiddleware(req, res, next) {
   const token = authHeader.split(" ")[1];
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; //simpan data user di request
+    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+
+    req.user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+    });
+
+    if (!req.user) {
+      return res.status(401).json({ message: "Pengguna tidak ditemukan" });
+    }
+
     next();
   } catch (error) {
     return res

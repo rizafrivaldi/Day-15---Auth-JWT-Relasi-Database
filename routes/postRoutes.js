@@ -56,7 +56,7 @@ router.get("/all", protect, authorizesRoles("admin"), async (req, res) => {
 });
 
 //GET POST BY ID//
-router.get("/:id", async (req, res) => {
+router.get("/:id", protect, authorizesRoles("admin"), async (req, res) => {
   try {
     const postId = Number(req.params.id);
 
@@ -64,18 +64,19 @@ router.get("/:id", async (req, res) => {
       where: { id: postId },
       include: {
         user: {
-          select: { id: true, username: true, email: true },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+          },
         },
       },
     });
 
-    if (!post) {
-      return res.status(404).json({ message: "Post tidak ditemukan" });
-    }
-
-    return res.json(post);
+    if (!post) return res.status(404).json({ message: "Post tidak ditemukan" });
+    return res.json({ success: true, post });
   } catch (error) {
-    console.error("GET POST ERROR:", error);
+    console.error("GET POST DETAIL ERROR:", error);
     return res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 });

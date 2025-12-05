@@ -5,6 +5,72 @@ const prisma = require("../prisma/prisma");
 const protect = require("../middleware/authMiddleware");
 const authorizesRoles = require("../middleware/roleMiddleware");
 
+router.get("/", async (req, res) => {
+  try {
+    let {
+      page = 1,
+      limit = 10,
+      search = "",
+      userId,
+      startDate,
+      endDate,
+    } = req.query;
+
+    page = Number(page);
+    limit = Number(limit);
+
+    const filters = {};
+
+    if (search) {
+      filters.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { content: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    if (userId) {
+      filters.userId = Number(userId);
+    }
+
+    if (startDate && endDate) {
+      filters.createdAt = {};
+
+      if (startDate) filters.createdAt.gte = new Date(startDate);
+      if (endDate) filters.createdAt.lte = new Date(endDate);
+    }
+
+    const totalPosts = await prisma.post.count({ where: filters });
+
+    const posts = await prisma.post.findMany({
+      where: filters,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return res.json({
+      success: true,
+      page,
+      limit,
+      totalPosts,
+      totalPages: Math.ceil(totalPosts / limit),
+      posts,
+    });
+  } catch (error) {
+    console.error("GET POSTS ERROR:", error);
+    return res.status(500).json({ message: "Terjadi kesalahan server" });
+  }
+});
+
 //CREATE POST//
 router.post("/", protect, async (req, res) => {
   try {

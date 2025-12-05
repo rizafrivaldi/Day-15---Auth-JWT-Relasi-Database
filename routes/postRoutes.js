@@ -82,26 +82,31 @@ router.get("/:id", protect, authorizesRoles("admin"), async (req, res) => {
 });
 
 //UPDATE POST//
-router.put("/:id", protect, async (req, res) => {
+router.put("/:id", protect, authorizesRoles("admin"), async (req, res) => {
   try {
-    const postId = Number(req.params.id);
+    const { id } = req.params;
     const { title, content } = req.body;
+
+    if (!title || !content) {
+      return res.status(400).json({ message: "Title dan content harus diisi" });
+    }
+
     const post = await prisma.post.findUnique({
-      where: { id: postId },
+      where: { id: Number(id) },
     });
 
     if (!post) return res.status(404).json({ message: "Post tidak ditemukan" });
 
-    if (post.userId !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Akses ditolak" });
-    }
-
-    const updated = await prisma.post.update({
-      where: { id: postId },
-      data: { title, content },
+    const updatedPost = await prisma.post.update({
+      where: { id: Number(id) },
+      data: { title: title || post.title, content: content || post.content },
     });
 
-    return res.json({ message: "Post diperbarui", post: updated });
+    return res.json({
+      success: true,
+      message: "Post diperbarui",
+      post: updatedPost,
+    });
   } catch (error) {
     console.error("UPDATE POST ERROR:", error);
     res.status(500).json({ message: "Terjadi kesalahan server" });
@@ -109,7 +114,7 @@ router.put("/:id", protect, async (req, res) => {
 });
 
 //DELETE POST//
-router.delete("/:id", protect, async (req, res) => {
+router.delete("/:id", protect, authorizesRoles("admin"), async (req, res) => {
   try {
     const postId = Number(req.params.id);
     const post = await prisma.post.findUnique({
@@ -118,15 +123,11 @@ router.delete("/:id", protect, async (req, res) => {
 
     if (!post) return res.status(404).json({ message: "Post tidak ditemukan" });
 
-    if (post.userId !== req.user.id && req.user.role !== "admin") {
-      return res.status(403).json({ message: "Akses ditolak" });
-    }
-
-    await prisma.post.delete({
+    const deleted = await prisma.post.delete({
       where: { id: postId },
     });
 
-    return res.json({ message: "Post dihapus" });
+    return res.json({ message: "Post dihapus", deletedPost: deleted });
   } catch (error) {
     console.error("DELETE POST ERROR:", error);
     res.status(500).json({ message: "Terjadi kesalahan server" });

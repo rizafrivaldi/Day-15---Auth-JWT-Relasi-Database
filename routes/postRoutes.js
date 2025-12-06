@@ -14,6 +14,8 @@ router.get("/", async (req, res) => {
       userId,
       startDate,
       endDate,
+      sortBy = "createdAt",
+      order = "desc",
     } = req.query;
 
     page = Number(page);
@@ -21,6 +23,7 @@ router.get("/", async (req, res) => {
 
     const filters = {};
 
+    //SEARCH
     if (search) {
       filters.OR = [
         { title: { contains: search, mode: "insensitive" } },
@@ -28,10 +31,12 @@ router.get("/", async (req, res) => {
       ];
     }
 
+    //FILTER USER
     if (userId) {
       filters.userId = Number(userId);
     }
 
+    //FILTER DATE RANGE
     if (startDate && endDate) {
       filters.createdAt = {};
 
@@ -39,13 +44,15 @@ router.get("/", async (req, res) => {
       if (endDate) filters.createdAt.lte = new Date(endDate);
     }
 
+    //TOTAL DATA
     const totalPosts = await prisma.post.count({ where: filters });
 
+    //DATA + SORTING
     const posts = await prisma.post.findMany({
       where: filters,
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy: { [sortBy]: order },
       include: {
         user: {
           select: {

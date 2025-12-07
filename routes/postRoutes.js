@@ -44,15 +44,33 @@ router.get("/", async (req, res) => {
       if (endDate) filters.createdAt.lte = new Date(endDate);
     }
 
+    //SORTING
+    let sortFields = sortBy.split(",");
+    let sortOrders = order.split(",");
+
+    const allowedSort = ["id", "title", "createdAt", "updatedAt", "userId"];
+
+    sortFields = sortFielfds.filter((field) => allowedSort.includes(field));
+
+    if (sortFields.length === 0) {
+      sortFields = ["createdAt"];
+      sortOrders = ["desc"];
+    }
+
+    let sortConfig = {};
+    sortFields.forEach((field, index) => {
+      sortConfig[field] = sortOrders[index] || "asc";
+    });
+
     //TOTAL DATA
     const totalPosts = await prisma.post.count({ where: filters });
 
-    //DATA + SORTING
+    //GET DATA + SORTING
     const posts = await prisma.post.findMany({
       where: filters,
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: { [sortBy]: order },
+      orderBy: sortConfig,
       include: {
         user: {
           select: {
@@ -70,6 +88,7 @@ router.get("/", async (req, res) => {
       limit,
       totalPosts,
       totalPages: Math.ceil(totalPosts / limit),
+      sorting: sortConfig,
       posts,
     });
   } catch (error) {
